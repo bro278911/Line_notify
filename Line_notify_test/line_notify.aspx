@@ -11,6 +11,7 @@
     <form runat="server">
         <div>
            <asp:Button id="Button1" Text="發送訊息"  runat="server"/>
+            <asp:Button id="Button2" Text="爬蟲"  runat="server"/>
         </div>
     </form>
 </body>
