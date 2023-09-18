@@ -9,6 +9,7 @@ using System.Net.Http;
 using System.Net.Http.Headers;
 using System.Threading;
 using System.Threading.Tasks;
+using System.Timers;
 using System.Web;
 using System.Web.UI;
 using System.Web.UI.WebControls;
@@ -33,32 +34,12 @@ namespace Line_notify_test
         }
         private void Climb_click(object sender, EventArgs e)
         {
-            //Main_test();
             Task climbgTask = Task.Run(() => Main_test2Async());
-        }
-        private void Main_test()
-        {
-            DataTable dt = new DataTable();
-            //dt.Columns.Add("日期");
-            //dt.Columns.Add("時間");
-            HtmlWeb webClient = new HtmlWeb();
-            HtmlDocument doc = webClient.Load("https://branch.taipower.com.tw/d103/xcnotice?xsmsid=0M242581312675626779");
-            // 開始撈每一筆資料
-            //for (int i = 1; i <= 12; i++)
-            //{
-            //    DataRow dr = dt.NewRow();
-            HtmlNodeCollection Node1 = doc.DocumentNode.SelectNodes($"//*[@id='MainForm']/article/div/div[1]/div/div[2]/ul/li[1]");
-            //    dr["日期"] = Node1[0].InnerText.ToString().Replace("\r\n", "").Replace("\t", "");
-            //    dt.Rows.Add(dr);
-            //}
-            HtmlNodeCollection Node2 = doc.DocumentNode.SelectNodes($"//*[@id='MainForm']/article/div/div[1]/div/div[3]/table");
-            Console.WriteLine(Node1[0].InnerText.ToString());
-            Console.WriteLine(Node2[0].InnerText.ToString());
         }
         private async Task Main_test2Async()
         {
+            
             var context = BrowsingContext.New(Configuration.Default.WithDefaultLoader());
-
             // 目標連結:
             string url = "https://branch.taipower.com.tw/d103/xcnotice?xsmsid=0M242581312675626779";
 
@@ -66,23 +47,48 @@ namespace Line_notify_test
             var document = await context.OpenAsync(url);
 
             // 選擇所有包含 id 屬性的 tr 元素
-            var trElements = document.QuerySelectorAll(".time");
-
-            // 遍歷每個 tr 元素，並抽取 id、rank 和 title 屬性
-            foreach (var i in trElements)
+            //DataTable dt = new DataTable();
+            //dt.Columns.Add("日期", typeof(string));
+            //dt.Columns.Add("時間", typeof(string));
+            //dt.Columns.Add("停電區域", typeof(string));
+            //Console.WriteLine(dt);
+            //dt.Rows.Add(dr);
+            var dateElements = document.QuerySelectorAll("table caption");
+            var timeElements = document.QuerySelectorAll(".time");
+            var areaElements = document.QuerySelectorAll(".note");
+            var date = "";
+            var time = "";
+            var area = "";
+            int j = -1;
+            //// 遍歷每個 tr 元素，並抽取 id、rank 和 title 屬性
+            for (int i = 0; i < timeElements.Length; i++)
             {
-                //var id = tr.GetAttribute("id");
-                //var rank = tr.QuerySelector(".title > .rank")?.TextContent;
-                //var title = tr.QuerySelector(".titleline")?.TextContent;
-
-                // 文章連結
-                //var link = tr.QuerySelector(".titleline > a[href]")?.GetAttribute("href");
-
-                // 標題下方的資訊
-                //var data = tr.NextElementSibling?.QuerySelector(".subline")?.TextContent.Trim();
-
-                Console.WriteLine(i);
+                //DataRow dr = dt.NewRow();
+                //Console.WriteLine(timeElements[i].TextContent);
+                if (timeElements[i].TextContent == "停電時段")
+                {
+                    j++;
+                }
+                else
+                {
+                    date = (dateElements[j].TextContent).Split('：')[1];
+                    time = timeElements[i].TextContent;
+                    area = areaElements[i].TextContent;
+                    Insert_SQL(date, time, area);
+                    
+                    //dr["日期"] = (dateElements[j].TextContent).Split('：')[1];
+                    //dr["時間"] = timeElements[i].TextContent;
+                    //dr["停電區域"] = areaElements[i].TextContent;
+                    //dt.Rows.Add(dr);
+                } 
             }
+            //Console.WriteLine(dt);
+        }
+        void Insert_SQL(string date,string time,string area)
+        {
+            Method_electric method = new Method_electric();
+            string re_ = method.electric_insert(date,time,area);
+            Console.WriteLine(re_);//success or fail
         }
     }
 }
