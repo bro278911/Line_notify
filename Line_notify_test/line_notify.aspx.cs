@@ -4,6 +4,7 @@ using HtmlAgilityPack;
 using System;
 using System.Collections.Generic;
 using System.Data;
+using System.Globalization;
 using System.Linq;
 using System.Net.Http;
 using System.Net.Http.Headers;
@@ -25,11 +26,13 @@ namespace Line_notify_test
         }
         protected void notify_click(object sender, EventArgs e)
         {
+            var current_area = "%觀音區%";
+            string result = Select_SQL(current_area);
             HttpClient httpClient = new HttpClient();
             httpClient.DefaultRequestHeaders.Accept.Add(new MediaTypeWithQualityHeaderValue("application/x-www-form-urlencoded"));
             httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", "ztZlrGBh1AOeZD4KcP1Ag1uoE7KuCbhv7bsj4JC9y7b");
             var content = new Dictionary<string, string>();
-            content.Add("message", "測試訊息發送成功拉!!!讚喔!");
+            content.Add("message", result);
             httpClient.PostAsync("https://notify-api.line.me/api/notify", new FormUrlEncodedContent(content));
         }
         private void Climb_click(object sender, EventArgs e)
@@ -74,8 +77,12 @@ namespace Line_notify_test
                     date = (dateElements[j].TextContent).Split('：')[1];
                     time = timeElements[i].TextContent;
                     area = areaElements[i].TextContent;
-                    Insert_SQL(date, time, area);
-                    
+                    CultureInfo culture = new CultureInfo("zh-TW");
+                    culture.DateTimeFormat.Calendar = new TaiwanCalendar();
+                    var Transfer_date = DateTime.Parse(date, culture);
+                    var full_ymd = Transfer_date.ToString("yyyy-MM-dd");
+                    Insert_SQL(full_ymd, time, area);
+                    //Console.WriteLine(test2);
                     //dr["日期"] = (dateElements[j].TextContent).Split('：')[1];
                     //dr["時間"] = timeElements[i].TextContent;
                     //dr["停電區域"] = areaElements[i].TextContent;
@@ -89,6 +96,13 @@ namespace Line_notify_test
             Method_electric method = new Method_electric();
             string re_ = method.electric_insert(date,time,area);
             Console.WriteLine(re_);//success or fail
+        }
+        string Select_SQL(string current_area)
+        {
+            Method_electric method = new Method_electric();
+            DataTable re_ = method.electric_Select(current_area);
+            string area = re_.Rows[0]["area"].ToString();
+            return area;
         }
     }
 }
